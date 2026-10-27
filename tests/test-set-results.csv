@@ -1,0 +1,26 @@
+ID,Message,Expected,Predicted,Confidence,Correct,Routed to review (<0.7)
+1,"Hi, we're a 200-person retailer and want a demo of your platform next week. What does pricing look like for 50 users?",sales_lead,sales_lead,0.97,1,no
+2,Can you send me a quote for the enterprise plan? We need SSO and want to sign before the end of the quarter.,sales_lead,sales_lead,0.95,1,no
+3,I saw your product on LinkedIn. Is there a free trial so our ops team can test it?,sales_lead,sales_lead,0.9,1,no
+4,We're evaluating three tools for our support team and yours is on the shortlist. Who can walk us through it?,sales_lead,sales_lead,0.95,1,no
+5,Our contract renews next month and we're thinking about upgrading to the bigger plan for 30 more seats. Can someone send pricing?,sales_lead,sales_lead,0.95,1,no
+6,We're a startup with 8 people. Do you have a discount for early-stage companies?,sales_lead,sales_lead,0.9,1,no
+7,Since the last update I can't export reports to CSV anymore. The button does nothing.,support,support,0.95,1,no
+8,URGENT: our whole team can't log in since 9am. We have a client presentation in two hours.,support,support,0.95,1,no
+9,How do I add a new user to our workspace? I can't find the setting.,support,support,0.9,1,no
+10,We were charged twice this month for our subscription. Please refund the second payment.,support,support,0.93,1,no
+11,The integration with our CRM stopped syncing yesterday. Is there a known issue?,support,support,0.9,1,no
+12,We're a digital agency and implement tools like yours for clients. We'd like to become a reseller.,partnership,partnership,0.95,1,no
+13,We build a calendar app and would love to integrate with your API. Who handles technology partnerships?,partnership,partnership,0.93,1,no
+14,"Would you be open to a joint webinar for our audiences? We run a newsletter with 40,000 operations managers.",partnership,partnership,0.93,1,no
+15,"Hi, I'm a business student and I'd like to apply for your operations internship. My CV is attached.",job_application,job_application,0.97,1,no
+16,Are you hiring sales development reps in Berlin? I have two years of SaaS experience.,job_application,job_application,0.95,1,no
+17,Do you have any open positions for working students in marketing?,job_application,job_application,0.95,1,no
+18,Get your website to #1 on Google in 7 days! Guaranteed results. Reply now for a special offer.,spam,spam,0.97,1,no
+19,"Congratulations, you have been selected for a free iPhone. Click the link to claim your prize.",spam,spam,0.98,1,no
+20,We offer cheap backlinks and guest posts on high authority sites. Interested?,spam,spam,0.95,1,no
+21,"We love your tool, but the export bug is driving us crazy. If it's fixed, we'd upgrade to the team plan for 25 people.",sales_lead,sales_lead,0.9,1,no
+22,"Hi, I work at an agency and one of our clients uses your product. They can't log in. Can you help them?",support,support,0.6,1,yes
+23,I'm a student writing my thesis about AI in customer service. Could I interview someone from your team?,partnership,partnership,0.4,1,yes
+24,Please remove me from your mailing list.,support,support,0.8,1,no
+25,"Hello, I'd like more information.",sales_lead,sales_lead,0.3,1,yes

@@ -1,0 +1,923 @@
+{
+  "name": "AI Lead & Request Triage",
+  "nodes": [
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1151e4b9-bddd-4276-916e-72252815c400",
+              "name": "logSheetId",
+              "value": "YOUR_SHEET_ID",
+              "type": "string"
+            },
+            {
+              "id": "c035e057-114b-4927-8985-50057f25ab2e",
+              "name": "salesChannel",
+              "value": "YOUR_SALES_CHANNEL_ID",
+              "type": "string"
+            },
+            {
+              "id": "23a8b7f2-a3c1-4037-b1bc-72cd52b1902c",
+              "name": "supportChannel",
+              "value": "YOUR_SUPPORT_CHANNEL_ID",
+              "type": "string"
+            },
+            {
+              "id": "c64d1563-23d6-40d6-8acb-5bc97fa6e2f5",
+              "name": "partnerChannel",
+              "value": "YOUR_PARTNER_CHANNEL_ID",
+              "type": "string"
+            },
+            {
+              "id": "52c58bea-3501-42ac-b2b7-44a5eb51fe77",
+              "name": "reviewChannel",
+              "value": "YOUR_REVIEW_CHANNEL_ID",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        224,
+        -224
+      ],
+      "id": "af8010d9-3643-4dc8-a575-99325ad59a89",
+      "name": "Config"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "claude-haiku-5-5",
+          "mode": "list",
+          "cachedResultName": "claude-haiku-5-5"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=Name: {{ $json.Name }}\nEmail: {{ $json.Email }}\nCompany: {{ $json.Company }}\n\nMessage:\n{{ $json.Message }}"
+            }
+          ]
+        },
+        "options": {
+          "system": "You triage inbound messages for a B2B software company.\nClassify each message into exactly one category:\n- sales_lead: wants to buy, get a demo, pricing, or evaluate the product\n- support: an existing customer with a problem or question\n- partnership: agencies, resellers, integrations, co-marketing\n- job_application: someone applying for a job or internship\n- spam: ads, SEO offers, irrelevant or automated messages\n\nIf a message mixes a problem with clear buying intent (upgrade, more seats, new plan), classify it as sales_lead, because the sales team must not miss the opportunity. Mention the problem in the summary.\n\nUrgency: 1 = low, 2 = normal, 3 = high (deadline, outage, large deal, angry customer).\nConfidence: 0.0 to 1.0, how sure you are about the category.\nUse only information from the message. Do not invent company details.\n\nAlways return the JSON, even if the message is vague or very short.\nIf the message is unclear, make your best guess and set a low confidence.\n\nReturn only JSON:\n{\n  \"category\": \"sales_lead | support | partnership | job_application | spam\",\n  \"urgency\": 1,\n  \"confidence\": 0.0,\n  \"summary\": \"one sentence\",\n  \"next_step\": \"one concrete action for the team\"\n}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.anthropic",
+      "typeVersion": 1,
+      "position": [
+        448,
+        -224
+      ],
+      "id": "99d270cc-2326-475c-ac1b-bf24f08ff692",
+      "name": "Classify with Claude",
+      "credentials": {
+        "anthropicApi": {
+          "id": "cPPwIBba62ScEmOS",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const j = $json;\n\n// 1. Find Claude's answer, wherever n8n puts it\nlet raw =\n  (Array.isArray(j.content) ? j.content.map(c => c.text || '').join('') : null) ??\n  j.message?.content ?? j.text ?? j.output ?? j.response ?? j;\n\n// 2. Turn it into data\nlet d = {};\nif (typeof raw === 'object' && raw !== null && !Array.isArray(raw)) {\n  d = raw;\n} else if (typeof raw === 'string') {\n  const cleaned = raw.replace(/```json|```/g, '');\n  const m = cleaned.match(/\\{[\\s\\S]*\\}/);\n  try { d = JSON.parse(m ? m[0] : cleaned); } catch (e) { d = {}; }\n}\n\n// 3. Validate\nconst form = $('Config').item.json;\nconst allowed = ['sales_lead','support','partnership','job_application','spam'];\nconst category = allowed.includes(d.category) ? d.category : 'unknown';\nconst confidence = Number(d.confidence ?? 0);\n\n// 4. Human-in-the-loop: unsure or unknown goes to review\nconst route = (category === 'unknown' || confidence < 0.7) ? 'review' : category;\n\nreturn {\n  date: new Date().toISOString().slice(0, 16).replace('T', ' '),\n  name: form.Name,\n  email: form.Email,\n  company: form.Company || '',\n  message: form.Message,\n  category,\n  urgency: Number(d.urgency ?? 2),\n  confidence,\n  summary: d.summary || 'Could not be classified automatically.',\n  nextStep: d.next_step || 'Review this request manually.',\n  route\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        800,
+        -224
+      ],
+      "id": "c6ee141a-21d8-49d8-9cb5-185a405968b0",
+      "name": "Parse Triage"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $('Config').item.json.logSheetId }}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Date": "={{ $json.date }}",
+            "Name": "={{ $json.name }}",
+            "Email": "={{ $json.email }}",
+            "Company": "={{ $json.company }}",
+            "Message": "={{ $json.message }}",
+            "Category": "={{ $json.category }}",
+            "Urgency": "={{ $json.urgency }}",
+            "Confidence": "={{ $json.confidence }}",
+            "Summary": "={{ $json.summary }}",
+            "Next step": "={{ $json.nextStep }}",
+            "Routed to": "={{ $json.route }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Company",
+              "displayName": "Company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Message",
+              "displayName": "Message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Category",
+              "displayName": "Category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Urgency",
+              "displayName": "Urgency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Confidence",
+              "displayName": "Confidence",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Summary",
+              "displayName": "Summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Next step",
+              "displayName": "Next step",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Routed to",
+              "displayName": "Routed to",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1136,
+        -576
+      ],
+      "id": "cc60c116-a75e-4601-b312-f5cb3ed97d70",
+      "name": "Log to Sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "0dx88oA36ANulxUx",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 4
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.route }}",
+                    "rightValue": "sales_lead",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "94ed277e-424e-40a3-908a-c669140f8748"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Sales"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 4
+                },
+                "conditions": [
+                  {
+                    "id": "cee14ef1-c928-4b3b-8378-18c0ef8b7b8d",
+                    "leftValue": "={{ $json.route }}",
+                    "rightValue": "partnership",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Partnership"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 4
+                },
+                "conditions": [
+                  {
+                    "id": "f6404b5c-c07d-4a78-a288-5849db8b08ed",
+                    "leftValue": "={{ $json.route }}",
+                    "rightValue": "support",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Support"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 4
+                },
+                "conditions": [
+                  {
+                    "id": "5606d24f-d3c7-40a7-8a3e-f21249de061a",
+                    "leftValue": "={{ $json.route }}",
+                    "rightValue": "review",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Review"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "Other"
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.5,
+      "position": [
+        1072,
+        -272
+      ],
+      "id": "39e37a00-6e04-4827-9b8c-fc845833c355",
+      "name": "Route by category"
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "YOUR_AIRTABLE_BASE_ID",
+          "mode": "id"
+        },
+        "table": {
+          "__rl": true,
+          "value": "YOUR_AIRTABLE_TABLE_ID",
+          "mode": "id"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Name": "={{ $json.name }}",
+            "Email": "={{ $json.email }}",
+            "Company": "={{ $json.company }}",
+            "Category": "={{ $json.route === 'sales_lead' ? 'Sales' : 'Partnership' }}",
+            "Urgency": "={{ $json.urgency }}",
+            "Summary": "={{ $json.summary }}",
+            "Status": "New",
+            "Next step": "={{ $json.nextStep }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Company",
+              "displayName": "Company",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Category",
+              "displayName": "Category",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Sales",
+                  "value": "Sales"
+                },
+                {
+                  "name": "Partnership",
+                  "value": "Partnership"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Urgency",
+              "displayName": "Urgency",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Summary",
+              "displayName": "Summary",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Next step",
+              "displayName": "Next step",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "New",
+                  "value": "New"
+                },
+                {
+                  "name": "Contacted",
+                  "value": "Contacted"
+                },
+                {
+                  "name": "Qualified",
+                  "value": "Qualified"
+                },
+                {
+                  "name": "Closed",
+                  "value": "Closed"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1296,
+        -288
+      ],
+      "id": "9e461504-380b-4301-b9ab-67d9d5fe0276",
+      "name": "Add to CRM",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "8Gk2ktaaWiJCP6Yt",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "={{ $('Config').item.json.supportChannel }}",
+          "mode": "id"
+        },
+        "text": "=*New {{ $('Parse Triage').item.json.category }}* · urgency {{ $('Parse Triage').item.json.urgency }}/3 · confidence {{ Math.round($('Parse Triage').item.json.confidence * 100) }}%\n*From:* {{ $('Parse Triage').item.json.name }} ({{ $('Parse Triage').item.json.company }})\n*Summary:* {{ $('Parse Triage').item.json.summary }}\n*Next step:* {{ $('Parse Triage').item.json.nextStep }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.7,
+      "position": [
+        1296,
+        -112
+      ],
+      "id": "5db2b054-2974-4efb-aa33-fbaa02dc0117",
+      "name": "Notify support",
+      "webhookId": "df39dc28-0663-4f32-bf10-fc0c2af2e75f",
+      "credentials": {
+        "slackApi": {
+          "id": "Zt6WfkBIZ3xGKJP4",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "={{ $('Config').item.json.partnerChannel }}",
+          "mode": "id"
+        },
+        "text": "=*New {{ $('Parse Triage').item.json.category }}* · urgency {{ $('Parse Triage').item.json.urgency }}/3 · confidence {{ Math.round($('Parse Triage').item.json.confidence * 100) }}%\n*From:* {{ $('Parse Triage').item.json.name }} ({{ $('Parse Triage').item.json.company }})\n*Summary:* {{ $('Parse Triage').item.json.summary }}\n*Next step:* {{ $('Parse Triage').item.json.nextStep }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.7,
+      "position": [
+        1728,
+        -128
+      ],
+      "id": "faf44be3-b15d-426d-9bd5-1b7fbf85358e",
+      "name": "Notify partnerships",
+      "webhookId": "df39dc28-0663-4f32-bf10-fc0c2af2e75f",
+      "credentials": {
+        "slackApi": {
+          "id": "Zt6WfkBIZ3xGKJP4",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "={{ $('Config').item.json.reviewChannel }}",
+          "mode": "id"
+        },
+        "text": "=*New {{ $('Parse Triage').item.json.category }}* · urgency {{ $('Parse Triage').item.json.urgency }}/3 · confidence {{ Math.round($('Parse Triage').item.json.confidence * 100) }}%\n*From:* {{ $('Parse Triage').item.json.name }} ({{ $('Parse Triage').item.json.company }})\n*Summary:* {{ $('Parse Triage').item.json.summary }}\n*Next step:* {{ $('Parse Triage').item.json.nextStep }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.7,
+      "position": [
+        1296,
+        64
+      ],
+      "id": "dd52e91a-a6f4-43ce-b0fb-0fe44946ffb6",
+      "name": "Notify review",
+      "webhookId": "df39dc28-0663-4f32-bf10-fc0c2af2e75f",
+      "credentials": {
+        "slackApi": {
+          "id": "Zt6WfkBIZ3xGKJP4",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "formTitle": "Contact us",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Name",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Email",
+              "fieldType": "email",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Company"
+            },
+            {
+              "fieldLabel": "Message",
+              "fieldType": "textarea",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {},
+        "formDescription": "Tell us how we can help."
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        0,
+        -224
+      ],
+      "id": "731c5657-0917-40fc-912c-f827844fd851",
+      "name": "Contact form",
+      "webhookId": "3d72f296-39cf-4721-821c-0e5ecd9ca224"
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "={{ $('Config').item.json.salesChannel }}",
+          "mode": "id"
+        },
+        "text": "=*New {{ $('Parse Triage').item.json.category }}* · urgency {{ $('Parse Triage').item.json.urgency }}/3 · confidence {{ Math.round($('Parse Triage').item.json.confidence * 100) }}%\n*From:* {{ $('Parse Triage').item.json.name }} ({{ $('Parse Triage').item.json.company }})\n*Summary:* {{ $('Parse Triage').item.json.summary }}\n*Next step:* {{ $('Parse Triage').item.json.nextStep }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.7,
+      "position": [
+        1728,
+        -304
+      ],
+      "id": "9d36cbdd-383e-49c7-91a4-a198dc805654",
+      "name": "Notify sales",
+      "webhookId": "df39dc28-0663-4f32-bf10-fc0c2af2e75f",
+      "credentials": {
+        "slackApi": {
+          "id": "Zt6WfkBIZ3xGKJP4",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## 1 · Intake\nA contact form collects name, email, company and message.\n",
+        "height": 272,
+        "width": 448,
+        "color": "#38429E"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -64,
+        -320
+      ],
+      "id": "6fe68271-bedf-4e20-bb82-826e668a2860",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## 2 · Classify\nClaude sorts each request into a category, rates urgency and confidence, and suggests a next step.",
+        "height": 272,
+        "width": 528,
+        "color": "#6B1362"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        416,
+        -320
+      ],
+      "id": "4126b836-a0e1-44e0-b945-5ea97c054476",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## 3 · Route\nLeads and partners go to the CRM. Every request goes to the right Slack channel. Unclear cases go to human review.",
+        "height": 624,
+        "width": 912,
+        "color": "#008427"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1008,
+        -384
+      ],
+      "id": "b6552d9e-25c8-44ab-9018-4923fd6d7aca",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "## 4 · Log\nEvery request is logged in a Google Sheet, including the AI's decision.",
+        "height": 272,
+        "width": 384,
+        "color": "#994C05"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1008,
+        -688
+      ],
+      "id": "8a5d9035-50fb-46df-8876-173a17067456",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "content": "# AI Lead & Request Triage\nInbound requests are classified by Claude and routed to the right team, CRM and log, with human review for unclear cases.",
+        "height": 144,
+        "width": 448,
+        "color": "#737373"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -64,
+        -496
+      ],
+      "id": "132e9876-9b85-44c7-9254-83c115c19b2c",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 4
+          },
+          "conditions": [
+            {
+              "id": "b316aa5c-ddbc-4a8f-b30a-8781b91df6f7",
+              "leftValue": "={{ $('Parse Triage').item.json.route }}",
+              "rightValue": "sales_lead",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.4,
+      "position": [
+        1520,
+        -288
+      ],
+      "id": "70818739-4ea9-499e-ae59-e80e11c8be2d",
+      "name": "Sales or partner?"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "Classify with Claude",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Classify with Claude": {
+      "main": [
+        [
+          {
+            "node": "Parse Triage",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Triage": {
+      "main": [
+        [
+          {
+            "node": "Route by category",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Log to Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by category": {
+      "main": [
+        [
+          {
+            "node": "Add to CRM",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Add to CRM",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Notify support",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Notify review",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add to CRM": {
+      "main": [
+        [
+          {
+            "node": "Sales or partner?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Contact form": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sales or partner?": {
+      "main": [
+        [
+          {
+            "node": "Notify sales",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Notify partnerships",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "5ab21cfe-5447-41ff-afb7-ca477fd3002f",
+  "nodeGroups": [],
+  "tags": []
+}

@@ -1,0 +1,268 @@
+{
+  "name": "Triage test",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "4f782fbb-fc7c-47f9-aa85-a030f6aa0a54",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_SHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Test set",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        224,
+        0
+      ],
+      "id": "0aa4a3fa-e603-42fb-b08a-3fbaa97e749c",
+      "name": "Read test set",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "0dx88oA36ANulxUx",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "claude-haiku-5-5",
+          "mode": "list",
+          "cachedResultName": "claude-haiku-5-5"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "={{ $json.Message }}"
+            }
+          ]
+        },
+        "options": {
+          "system": "You triage inbound messages for a B2B software company.\nClassify each message into exactly one category:\n- sales_lead: wants to buy, get a demo, pricing, or evaluate the product\n- support: an existing customer with a problem or question\n- partnership: agencies, resellers, integrations, co-marketing\n- job_application: someone applying for a job or internship\n- spam: ads, SEO offers, irrelevant or automated messages\n\nIf a message mixes a problem with clear buying intent (upgrade, more seats, new plan), classify it as sales_lead, because the sales team must not miss the opportunity. Mention the problem in the summary.\n\nUrgency: 1 = low, 2 = normal, 3 = high (deadline, outage, large deal, angry customer).\nConfidence: 0.0 to 1.0, how sure you are about the category.\nUse only information from the message. Do not invent company details.\n\nAlways return the JSON, even if the message is vague or very short.\nIf the message is unclear, make your best guess and set a low confidence.\n\nReturn only JSON:\n{\n  \"category\": \"sales_lead | support | partnership | job_application | spam\",\n  \"urgency\": 1,\n  \"confidence\": 0.0,\n  \"summary\": \"one sentence\",\n  \"next_step\": \"one concrete action for the team\"\n}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.anthropic",
+      "typeVersion": 1,
+      "position": [
+        416,
+        0
+      ],
+      "id": "46f393e6-29db-48b0-9ab7-113c7c238207",
+      "name": "Classify with Claude",
+      "credentials": {
+        "anthropicApi": {
+          "id": "cPPwIBba62ScEmOS",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const j = $json;\nlet raw =\n  (Array.isArray(j.content) ? j.content.map(c => c.text || '').join('') : null) ??\n  j.message?.content ?? j.text ?? j.output ?? j.response ?? j;\n\nlet d = {};\nif (typeof raw === 'object' && raw !== null && !Array.isArray(raw)) {\n  d = raw;\n} else if (typeof raw === 'string') {\n  const cleaned = raw.replace(/```json|```/g, '');\n  const m = cleaned.match(/\\{[\\s\\S]*\\}/);\n  try { d = JSON.parse(m ? m[0] : cleaned); } catch (e) { d = {}; }\n}\n\nconst row = $('Read test set').item.json;\nreturn {\n  ID: row.ID,\n  Predicted: d.category || 'unknown',\n  Confidence: Number(d.confidence ?? 0)\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        768,
+        0
+      ],
+      "id": "4ccc0475-e6f9-4d1e-9b4b-ff5d7a027eee",
+      "name": "Score"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_SHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Test set",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "ID": "={{ $json.ID }}",
+            "Predicted": "={{ $json.Predicted }}",
+            "Confidence": "={{ $json.Confidence }}"
+          },
+          "matchingColumns": [
+            "ID"
+          ],
+          "schema": [
+            {
+              "id": "ID",
+              "displayName": "ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Message",
+              "displayName": "Message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Expected",
+              "displayName": "Expected",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Predicted",
+              "displayName": "Predicted",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Confidence",
+              "displayName": "Confidence",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Correct",
+              "displayName": "Correct",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Accuracy",
+              "displayName": "Accuracy",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        992,
+        0
+      ],
+      "id": "f13f1816-c7f7-4e77-b674-55899883c602",
+      "name": "Write results",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "0dx88oA36ANulxUx",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Read test set",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read test set": {
+      "main": [
+        [
+          {
+            "node": "Classify with Claude",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Classify with Claude": {
+      "main": [
+        [
+          {
+            "node": "Score",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Score": {
+      "main": [
+        [
+          {
+            "node": "Write results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "1df3e716-7b9a-431d-99ed-a9b5f4097e7c",
+  "nodeGroups": [],
+  "tags": []
+}
