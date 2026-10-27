@@ -114,7 +114,7 @@ In a real company, especially under GDPR, this would need:
 - **Low confidence is a feature.** Instead of forcing a decision, the workflow hands unclear cases to a person. That's what makes AI safe to use in a real process.
 - **Plan for the AI failing.** Vague messages sometimes produced answers that couldn't be read. A fallback that routes them to review fixed that.
 - **Integrations break quietly.** Renaming one field in Airtable stopped the CRM step until the mapping was updated. In a real team, changes to shared fields need to be coordinated.
-- **The second project went much faster.** Setting up this one took about an hour, compared to two days for my [first n8n project](https://github.com/felixw-ctrl/n8n-ai-meeting-digest), because the building blocks were familiar.
+- **The second project went much faster.** Setting up all tools took about an hour, much quicker than for my [first n8n project](https://github.com/felixw-ctrl/n8n-ai-meeting-digest), because the building blocks were familiar.
 
 ## Next steps
 
