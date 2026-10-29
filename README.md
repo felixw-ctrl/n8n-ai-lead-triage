@@ -4,7 +4,7 @@ An n8n workflow that reads every inbound request and lets Claude decide what it 
 
 *[n8n](https://n8n.io) is a visual automation tool: you connect apps like Slack, Google Sheets or AI models by drag and drop, and add code only where needed.*
 
-Tested on 25 messages I wrote and labeled: accuracy rose from **96% to 100%** after one prompt improvement. **22 would have been routed fully automatically**, and the 3 most ambiguous would have gone to a person for review.
+Tested on **97 new messages the prompt had never seen: 97.9% correct.** 9 uncertain cases (about 1 in 11) would have gone to a person for review, and of the 88 that would have been routed automatically, **87 were correct**.
 
 ![Workflow overview](screenshots/workflow-overview.png)
 
@@ -62,19 +62,21 @@ Claude Haiku costs well under one cent per request. Slack, Airtable and Google S
 
 ## Measured quality
 
-I built a separate test workflow that runs a labeled test set through the same Claude prompt and writes the predictions back to a Sheet.
+A separate test workflow runs labeled messages through the same Claude prompt and writes the predictions back to a Sheet.
 
-![Accuracy](screenshots/accuracy.png)
+**Development:** I tuned the prompt on 25 test messages, drafted with an AI assistant and labeled manually. Accuracy went from 96% to 100% after one rule for mixed-intent messages, e.g. a customer reporting a bug who also wants more seats should go to sales, not support.
 
-- **Test set:** 25 messages. 20 clear cases across all five categories, plus 5 deliberately tricky ones with mixed intent.
-- **Baseline: 96% (24 of 25).** The one miss was a customer reporting a bug while saying they'd upgrade to 25 seats once it's fixed. Claude called it support, so sales would never have seen the opportunity.
-- **One prompt rule fixed it:** *"If a message mixes a problem with clear buying intent, classify it as sales_lead."*
-- **After: 100% (25 of 25)**, with no other case changing.
-- **Automatic vs. human:** Claude picked the right category every time, but only **22 of 25** would have been routed automatically. The three most ambiguous messages scored a confidence of 0.3–0.6, below the 70% threshold, so in the live workflow they would go to a person instead. Clear cases scored 0.90–0.98.
+**Holdout test:** after that, I ran 97 new synthetic messages the prompt had never seen, once, without further changes. They were also drafted with an AI assistant, and all labels were reviewed manually. They include short and informal messages, angry customers, existing customers asking to buy more, gibberish, and a few in German and Spanish.
 
-**How to read these numbers:** I wrote the test messages myself and tuned the prompt on the same set, so 100% shows the logic works on these cases, not that it will be perfect on new ones. Some labels are also debatable: is a student asking for a thesis interview a partnership? The next step is a separate set of new, real messages that the prompt has never seen.
+| Result | |
+|---|---|
+| **Correct category** | **95 of 97 (97.9%)** |
+| Sent to **human review** (confidence below 0.7) | 9 (about 1 in 11) |
+| Routed **automatically** | 88, of which **87 correct** |
 
-Full results: [`tests/test-set-results.csv`](tests/test-set-results.csv).
+Both misses were agencies offering a service, classified as partnerships. One, a development agency's sales pitch, had low confidence and would have gone to review. The other, a recruiter offering candidates, would have landed in the CRM and #partnerships instead of only being logged like other job applications, though the label is debatable: a recruiter is arguably a vendor, not an applicant.
+
+Full results: [`tests/holdout-results.csv`](tests/holdout-results.csv) and [`tests/test-set-results.csv`](tests/test-set-results.csv).
 
 ## Security & privacy
 
@@ -105,13 +107,14 @@ In a real company, especially under GDPR, this would need:
 - **Duplicates:** if the same person writes twice, the CRM gets a second record.
 - **No spam protection on the form:** bots could submit it. The AI sorts them out as spam, but each one still costs an API call.
 - **No retries:** if Slack or Airtable is down, that step fails. The request is still logged in the Sheet, so nothing is lost, but nobody is notified.
-- **English only:** the prompt and tests are in English. Other languages are untested.
-- **Small test set:** see "How to read these numbers" above.
+- **AI-generated test data:** the test messages were drafted with Claude, the same model family that classifies them. AI-written text tends to be clearer than real customer messages, so the real accuracy is likely lower.
+- **Mostly English:** only five test messages were in German or Spanish. All five were correct, but that's too few to rely on.
+- **Fuzzy category borders:** agencies offering a service sit between partnership and spam. A real company would need to define where that line is.
 
 ## What I learned
 
-- **Test with hard cases, not just easy ones.** 20 clear examples scored 100% straight away and proved little. The tricky, mixed-intent messages showed where the prompt needed work.
-- **Low confidence is a feature.** Instead of forcing a decision, the workflow hands unclear cases to a person. That's what makes AI safe to use in a real process.
+- **Test on hard cases and on data the prompt has never seen.** Easy examples and the messages I tuned on all scored 100%, which proved little. The tricky cases showed where the prompt needed work, and a separate holdout set gave the honest number: 97.9%.
+- **Low confidence is a feature.** Instead of forcing a decision, the workflow hands unclear cases to a person. In the holdout test, that caught one of the two misses. That's what makes AI safe to use in a real process.
 - **Plan for the AI failing.** Vague messages sometimes produced answers that couldn't be read. A fallback that routes them to review fixed that.
 - **Integrations break quietly.** Renaming one field in Airtable stopped the CRM step until the mapping was updated. In a real team, changes to shared fields need to be coordinated.
 - **The second project went much faster.** Setting up all tools took about an hour, much quicker than for my [first n8n project](https://github.com/felixw-ctrl/n8n-ai-meeting-digest), because the building blocks were familiar.
@@ -121,7 +124,8 @@ In a real company, especially under GDPR, this would need:
 - Update existing CRM records instead of creating duplicates when the same person writes again
 - Send support requests to a ticket system and job applications to an HR tool
 - Let reviewers re-route a request with a button in Slack
-- Grow the test set with real messages and re-test after every prompt change
+- Test with real inbound messages and re-run the holdout set after every prompt change
+- Define a clear rule for agencies and vendors offering services
 - Add retries and an alert when a step fails
 - Host it online, so anyone can try the form
 
@@ -172,6 +176,8 @@ ID	Message	Expected	Predicted	Confidence	Correct
 ```
 
 In the `Correct` column, use `=IF(D2="","",IF(C2=D2,1,0))`. Accuracy is then `=AVERAGE(F2:F26)`.
+
+For the holdout test, add a third tab `Holdout set` with the same columns and the messages from [`tests/holdout-results.csv`](tests/holdout-results.csv), then point the two Sheet nodes in the test workflow at it.
 
 7. **Credentials in n8n:** Anthropic, Slack API (bot token), Airtable Personal Access Token, Google Sheets (scope `https://www.googleapis.com/auth/spreadsheets`).
 
