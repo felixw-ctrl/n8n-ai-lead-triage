@@ -1,0 +1,89 @@
+{
+  "name": "CRM MCP Server",
+  "nodes": [
+    {
+      "parameters": {
+        "authentication": "bearerAuth",
+        "path": "crm"
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpTrigger",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "9d98a4fd-7284-4932-ae16-ecbc63c591ac",
+      "name": "MCP Server Trigger",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "",
+          "name": "Bearer Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Look up a contact in the CRM by exact email address. Read-only. Returns name, company, category, status and summary, or nothing if the contact does not exist.",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "YOUR_AIRTABLE_BASE_ID",
+          "mode": "list",
+          "cachedResultName": "Lead Triage CRM"
+        },
+        "table": {
+          "__rl": true,
+          "value": "YOUR_AIRTABLE_TABLE_ID",
+          "mode": "list",
+          "cachedResultName": "Leads"
+        },
+        "filterByFormula": "={Email} = '{{ $fromAI('email', 'Exact email address of the contact', 'string') }}'",
+        "options": {
+          "fields": [
+            "Name",
+            "Company",
+            "Category",
+            "Summary",
+            "Status"
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.airtableTool",
+      "typeVersion": 2.2,
+      "position": [
+        96,
+        208
+      ],
+      "id": "33ba1368-fafb-48dc-93c8-5b6a16e48ab7",
+      "name": "lookup_contact",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "lookup_contact": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP Server Trigger",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "nodeGroups": [],
+  "tags": []
+}

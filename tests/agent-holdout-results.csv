@@ -1,0 +1,98 @@
+ID,Message,Expected,Predicted,Confidence,Correct,Escalated,Tools used,Rule check,Duration (s)
+101,We're a 300-person insurance broker and want to replace our current intake tool. Can we see a demo in the next two weeks?,sales_lead,sales_lead,0.95,1,FALSE,"save_lead, notify_sales, save_reply_draft",ok,12.8
+102,pricing pls. team of 12. monthly or yearly?,sales_lead,sales_lead,0.95,1,FALSE,"save_lead, notify_sales, save_reply_draft",ok,10
+103,"Hello, our COO asked me to collect offers from three vendors by Friday. Could you send a proposal for 40 seats including onboarding?",sales_lead,sales_lead,0.95,1,FALSE,"save_lead, notify_sales, save_reply_draft",ok,9.3
+104,Do you offer a nonprofit discount? We're a charity with about 25 staff and are interested in your platform.,sales_lead,sales_lead,0.9,1,FALSE,"save_lead, notify_sales, save_reply_draft",ok,9.2
+105,I'm the head of ops at a 15-person agency. Is there a way to test the product with our own data before we commit?,sales_lead,sales_lead,0.9,1,FALSE,"save_lead, notify_sales, save_reply_draft",ok,8.8
+106,"We currently use a competitor and our contract ends in March. What would it cost to switch, and do you help with migration?",sales_lead,sales_lead,0.95,1,FALSE,"save_lead, notify_sales, save_reply_draft",ok,15.5
+107,Can your tool handle requests in German and French? We're a Swiss company with 80 employees and evaluating options.,sales_lead,sales_lead,0.9,1,FALSE,"save_lead, notify_sales, save_reply_draft",ok,16.4
+108,Saw your talk at the SaaS conference last week. Would love to chat about using this for our customer success team.,sales_lead,sales_lead,0.9,1,FALSE,"save_lead, notify_sales, save_reply_draft",ok,9.1
+109,Our procurement team needs your security documentation and a price for 200 users before we can move forward.,sales_lead,sales_lead,0.95,1,FALSE,"save_lead, notify_sales, save_reply_draft",ok,9.5
+110,"Hi, is there a free plan? I run a small online shop on my own.",sales_lead,sales_lead,0.8,1,FALSE,"save_lead, notify_sales, save_reply_draft",ok,10.6
+111,We're expanding to three new countries next quarter and need a scalable solution. Who can I talk to about enterprise options?,sales_lead,sales_lead,0.9,1,FALSE,"save_lead, notify_sales, save_reply_draft",ok,13.6
+112,"Quick question: do you integrate with HubSpot? If yes, we'd like a quote for 30 users.",sales_lead,sales_lead,0.9,1,FALSE,"save_lead, notify_sales, save_reply_draft",ok,13.7
+113,Our board approved budget for a new tool this quarter. Please send me your pricing and a case study from the logistics industry.,sales_lead,sales_lead,0.95,1,FALSE,"save_lead, notify_sales, save_reply_draft",ok,9.1
+114,We're a university department and want to use your product for student inquiries. Do you have academic pricing?,sales_lead,sales_lead,0.9,1,FALSE,"save_lead, notify_sales, save_reply_draft",ok,9.6
+115,"Hey, a friend recommended you. We're a 6-person startup drowning in emails. What would you recommend for us?",sales_lead,sales_lead,0.85,1,FALSE,"save_lead, notify_sales, save_reply_draft",ok,10.1
+116,We'd like to run a 30-day pilot with one team before rolling it out to all 400 employees. Is that possible?,sales_lead,sales_lead,0.95,1,FALSE,"save_lead, notify_sales, save_reply_draft",ok,9.9
+117,Is it possible to book a demo outside business hours? We're based in Singapore.,sales_lead,sales_lead,0.9,1,FALSE,"save_lead, notify_sales, save_reply_draft",ok,10
+118,"I need a quote today, our budget window closes tonight. 50 licenses.",sales_lead,sales_lead,0.95,1,FALSE,"save_lead, notify_sales, save_reply_draft",ok,9.2
+119,We're comparing you with two other tools. Can you send a feature comparison and your price list?,sales_lead,sales_lead,0.95,1,FALSE,"save_lead, notify_sales, save_reply_draft",ok,9.5
+120,Can I pay by invoice instead of credit card? We'd like to start with 10 seats next month.,sales_lead,sales_lead,0.9,1,FALSE,"save_lead, notify_sales, save_reply_draft",ok,10.9
+121,"We love the free version and want to upgrade the whole company, about 60 people. What's the next step?",sales_lead,sales_lead,0.95,1,FALSE,"save_lead, notify_sales, save_reply_draft",ok,10.6
+122,Our parent company might roll this out globally. I'd like to understand your enterprise contract terms first.,sales_lead,sales_lead,0.9,1,FALSE,"save_lead, notify_sales, save_reply_draft",ok,10.5
+123,Is there a discount if we pay for three years upfront?,sales_lead,sales_lead,0.9,1,FALSE,"save_lead, notify_sales, save_reply_draft",ok,13.7
+124,Hi! We're a dental clinic chain with 14 locations. Could your product help us handle appointment requests?,sales_lead,sales_lead,0.9,1,FALSE,"save_lead, notify_sales, save_reply_draft",ok,9.5
+125,Wir sind ein Mittelständler mit 120 Mitarbeitenden und interessieren uns für eine Demo. Wann hätten Sie nächste Woche Zeit?,sales_lead,sales_lead,0.95,1,FALSE,"save_lead, notify_sales, save_reply_draft",ok,9.4
+126,"Hola, somos una empresa de 40 personas en Madrid. ¿Nos pueden enviar precios?",sales_lead,sales_lead,0.95,1,FALSE,"save_lead, notify_sales, save_reply_draft",ok,8.7
+127,We're already a customer on the basic plan and want to add the analytics module for our 20 users. Can you send pricing?,sales_lead,sales_lead,0.9,1,FALSE,"save_lead, notify_sales, save_reply_draft",ok,9.9
+128,"The login issue from last week is fixed, thanks. While we're at it: could we get a quote for 15 more seats?",sales_lead,sales_lead,0.9,1,FALSE,"save_lead, notify_sales, save_reply_draft",ok,9.9
+129,"Not urgent, but we might need a tool like yours next year. Could you add me to your newsletter?",sales_lead,sales_lead,0.75,1,FALSE,"save_lead, notify_sales, save_reply_draft",ok,9.3
+130,Looking for a demo for our team. Thanks.,sales_lead,sales_lead,0.9,1,FALSE,"save_lead, notify_sales, save_reply_draft",ok,9.3
+131,Since this morning none of our automations are running. Nothing has changed on our side. Please help ASAP.,support,support,0.95,1,FALSE,"notify_support, save_reply_draft",ok,8.1
+132,How can I change the email address on my account?,support,support,0.95,1,FALSE,"notify_support, save_reply_draft",ok,7.4
+133,"The mobile app crashes every time I open the reports tab. iPhone 15, latest version.",support,support,0.95,1,FALSE,"notify_support, save_reply_draft",ok,9
+134,"Our invoice for October shows 25 seats, but we only have 20 users. Can you correct it?",support,support,0.95,1,FALSE,"notify_support, save_reply_draft",ok,7
+135,I accidentally deleted a project. Is there any way to restore it?,support,support,0.9,1,FALSE,"notify_support, save_reply_draft",ok,6.7
+136,"Hello, we cannot export data to Excel since yesterday. Error message: 'Export failed (code 502)'.",support,support,0.95,1,FALSE,"notify_support, save_reply_draft",ok,7.6
+137,Where can I find the API documentation for creating new records?,support,support,0.9,1,FALSE,"notify_support, save_reply_draft",ok,7.9
+138,Your last update changed the dashboard and my team can't find the filters anymore. This is really frustrating.,support,support,0.9,1,FALSE,"notify_support, save_reply_draft",ok,10.5
+139,Is there a way to set up two-factor authentication for all users in our workspace?,support,support,0.9,1,FALSE,"notify_support, save_reply_draft",ok,10.2
+140,We were charged after cancelling our subscription. Please refund the payment.,support,support,0.9,1,FALSE,"notify_support, save_reply_draft",ok,7.1
+141,Password reset email never arrives. I checked spam already.,support,support,0.95,1,FALSE,"notify_support, save_reply_draft",ok,7.2
+142,Can I transfer ownership of our workspace to my colleague? I'm leaving the company.,support,support,0.9,1,FALSE,"notify_support, save_reply_draft",ok,7.7
+143,Our Slack integration posts every message twice since this week.,support,support,0.95,1,FALSE,"notify_support, save_reply_draft",ok,7.3
+144,"The search is extremely slow for us, around 20 seconds per query. Is something wrong on your side?",support,support,0.95,1,FALSE,"notify_support, save_reply_draft",ok,7.5
+145,How do I add a custom field to the contact form?,support,support,0.9,1,FALSE,"notify_support, save_reply_draft",ok,6.9
+146,We need a copy of all our data for an audit. How can we export everything at once?,support,support,0.6,1,TRUE,,ok,3.1
+147,The SSO login stopped working for all our users after we changed our identity provider settings.,support,support,0.95,1,FALSE,"notify_support, save_reply_draft",ok,8.9
+148,Please cancel our subscription at the end of this month.,support,support,0.9,1,FALSE,"notify_support, save_reply_draft",ok,6.6
+149,I think there's a bug: dates in the calendar view are shown one day off.,support,support,0.9,1,FALSE,"notify_support, save_reply_draft",ok,6.9
+150,One of our users sees data from another team that he shouldn't have access to. Please look into this urgently.,support,support,0.85,1,TRUE,,ok,3
+151,Unser Konto ist seit heute gesperrt und niemand kann sich einloggen. Bitte dringend helfen!,support,support,0.95,1,FALSE,"notify_support, save_reply_draft",ok,7.4
+152,Is there a status page where I can check if your service is down?,support,support,0.9,1,FALSE,"notify_support, save_reply_draft",ok,7.9
+153,We'd like to downgrade from the business plan to the starter plan. How does that work?,support,support,0.9,1,FALSE,"notify_support, save_reply_draft",ok,7.7
+154,"The tool works fine, but could you add a dark mode? Our team would really like it.",support,support,0.8,1,FALSE,"notify_support, save_reply_draft",ok,7.4
+155,I'm a customer and want to understand how your AI features handle our data. Is it used for training?,support,support,0.8,1,TRUE,,ok,2.6
+156,We're a consulting firm that implements CRM systems for mid-sized companies. We'd like to add your product to our portfolio.,partnership,partnership,0.9,1,FALSE,"save_lead, notify_partnerships, save_reply_draft",ok,9.5
+157,"We run a podcast for operations leaders with 15,000 listeners. Would you like to sponsor an episode or join as a guest?",partnership,partnership,0.9,1,FALSE,"save_lead, notify_partnerships, save_reply_draft",ok,10
+158,Our app helps companies manage contracts. An integration with your tool would make sense for both our customers. Interested?,partnership,partnership,0.9,1,FALSE,"save_lead, notify_partnerships, save_reply_draft",ok,15
+159,We organize the Ops Summit in Berlin in April and are looking for exhibitors and speakers.,partnership,partnership,0.85,1,FALSE,"save_lead, notify_partnerships, save_reply_draft",ok,10.7
+160,We're a reseller in the Nordics and would like to distribute your product in Sweden and Norway.,partnership,partnership,0.95,1,FALSE,"save_lead, notify_partnerships, save_reply_draft",ok,14
+161,Would you be interested in a co-marketing campaign? We sell a complementary tool to the same audience.,partnership,partnership,0.9,1,FALSE,"save_lead, notify_partnerships, save_reply_draft",ok,12.4
+162,We're building an AI assistant marketplace and would love to list your product.,partnership,partnership,0.9,1,FALSE,"save_lead, notify_partnerships, save_reply_draft",ok,12.7
+163,I'm a freelance consultant and often recommend tools to clients. Do you have an affiliate or referral program?,partnership,partnership,0.9,1,FALSE,"save_lead, notify_partnerships, save_reply_draft",ok,8.3
+164,We run a startup accelerator and want to offer your tool to our 40 portfolio companies at a discount.,partnership,partnership,0.9,1,FALSE,"save_lead, notify_partnerships, save_reply_draft",ok,10
+165,Can we feature your company in our report on the best automation tools of 2026?,partnership,partnership,0.85,1,FALSE,"save_lead, notify_partnerships, save_reply_draft",ok,9.7
+166,We're a system integrator and one of our clients asked for your product. How can we become a certified partner?,partnership,partnership,0.95,1,FALSE,"save_lead, notify_partnerships, save_reply_draft",ok,77.4
+167,"Hi, we're the team behind a popular open-source CRM. Let's talk about a native integration.",partnership,partnership,0.9,1,FALSE,"save_lead, notify_partnerships, save_reply_draft",ok,19.5
+168,We'd love to write a joint case study about a customer we both serve.,partnership,partnership,0.9,1,FALSE,"save_lead, notify_partnerships, save_reply_draft",ok,10.2
+169,Our university runs an entrepreneurship program. Would your team give a guest lecture on AI in operations?,partnership,partnership,0.8,1,FALSE,"save_lead, notify_partnerships, save_reply_draft",ok,11.2
+170,Wir sind eine Agentur aus Wien und würden Ihr Produkt gerne unseren Kunden anbieten. Gibt es ein Partnerprogramm?,partnership,partnership,0.95,1,FALSE,"save_lead, notify_partnerships, save_reply_draft",ok,10.5
+171,"Hello, I'm applying for the customer success role posted on LinkedIn. My CV is attached.",job_application,job_application,0.95,1,FALSE,,ok,1.9
+172,Do you offer internships in operations for next summer? I'm studying business administration in Munich.,job_application,job_application,0.95,1,FALSE,,ok,2.9
+173,I'm a software engineer with 5 years of experience and I'd love to work for you. Are you hiring?,job_application,job_application,0.95,1,FALSE,,ok,2.1
+174,Following up on my application for the account executive position. Have you had a chance to review it?,job_application,job_application,0.95,1,FALSE,,ok,2.4
+175,I'm finishing my master's in data science and would like to know if you have any junior positions.,job_application,job_application,0.95,1,FALSE,,ok,3.2
+176,Is the marketing manager role still open? I'd like to send my application.,job_application,job_application,0.95,1,FALSE,,ok,2.2
+177,I'm a recruiter and have three great candidates for your sales roles. Can we talk about working together?,job_application,spam,0.5,0,TRUE,,ok,3.6
+178,"Hi, I applied two weeks ago and haven't heard back. Could you tell me the status?",job_application,job_application,0.95,1,FALSE,,ok,2.5
+179,"Ich interessiere mich für ein Praktikum im Bereich Sales und würde mich freuen, von Ihnen zu hören.",job_application,job_application,0.95,1,FALSE,,ok,2.7
+180,Would you consider me for a remote position? I'm based in Lisbon and have experience in RevOps.,job_application,job_application,0.95,1,FALSE,,ok,2.1
+181,"I'm a student looking for a working student job, 20 hours per week, ideally in product.",job_application,job_application,0.95,1,FALSE,,ok,2.6
+182,Can I do my bachelor thesis with your company? I'm interested in AI in customer service.,job_application,job_application,0.5,1,TRUE,,ok,3.7
+183,"Increase your Instagram followers by 10,000 in one week! Cheap packages available now.",spam,spam,0.97,1,FALSE,,ok,2
+184,"Dear sir, I am a prince and need your help to transfer 5 million dollars. You will receive 20%.",spam,spam,0.97,1,FALSE,,ok,2.2
+185,We build websites for only 99 dollars. Reply YES to get started today!,spam,spam,0.95,1,FALSE,,ok,2.8
+186,Your domain is expiring! Click here to renew now and avoid losing your website.,spam,spam,0.9,1,FALSE,,ok,2.5
+187,"Hi, I noticed some SEO issues on your site. I can fix them and get you to page one. Interested?",spam,spam,0.95,1,FALSE,,ok,2.4
+188,"Buy verified email lists of 50,000 decision makers in Europe. Special price this week only.",spam,spam,0.95,1,FALSE,,ok,2.3
+189,Congratulations! You've won a 500 euro gift card. Confirm your details to claim it.,spam,spam,0.95,1,FALSE,,ok,2.5
+190,test,spam,spam,0.3,1,TRUE,,ok,2.9
+191,asdfghjkl,spam,spam,0.3,1,TRUE,,ok,2.3
+192,We offer outsourced lead generation. 50 qualified meetings per month guaranteed. Book a call.,spam,spam,0.9,1,FALSE,,ok,3
+193,Can I write a guest post on your blog? I'll include two links to my casino website.,spam,spam,0.85,1,FALSE,,ok,2.4
+194,"Hello dear, I saw your profile and want to be friends. Please reply to my private email.",spam,spam,0.85,1,FALSE,,ok,2.5
+195,Your account has been suspended. Log in here to verify your identity: bit.ly/xyz,spam,spam,0.9,1,FALSE,,ok,2.7
+196,We are a development agency from abroad and can build any app for you at low cost. Portfolio attached.,spam,spam,0.8,1,FALSE,,ok,3.7
+197,"Free crypto airdrop for your company! Act fast, only 100 spots left.",spam,spam,0.97,1,FALSE,,ok,2.4

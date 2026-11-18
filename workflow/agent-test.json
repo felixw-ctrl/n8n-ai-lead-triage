@@ -1,0 +1,1159 @@
+{
+  "name": "Agent Test",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        288
+      ],
+      "id": "5cb250fb-74de-4366-be65-29387893158b",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_SHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Agent test set",
+          "mode": "name"
+        },
+        "filtersUI": {
+          "values": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        224,
+        288
+      ],
+      "id": "5a809b49-70ad-4e4a-aa7c-4e54a3135b4d",
+      "name": "Read test set",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "maxItems": 3
+      },
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        448,
+        288
+      ],
+      "id": "b96ae185-ba15-43d0-ae11-6a14ee009a7c",
+      "name": "Limit",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "claude-haiku-5-5",
+          "mode": "list",
+          "cachedResultName": "Claude Haiku 5.5"
+        },
+        "options": {
+          "temperature": 0,
+          "thinkingMode": "disabled"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.6,
+      "position": [
+        1360,
+        400
+      ],
+      "id": "f415baf1-8a1c-4f5e-8475-4df825a72d34",
+      "name": "Anthropic Chat Model",
+      "credentials": {
+        "anthropicApi": {
+          "id": "",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"category\": \"sales_lead\",\n  \"confidence\": 0.92,\n  \"urgency\": 2,\n  \"summary\": \"one sentence\",\n  \"next_step\": \"one concrete action for the team\",\n  \"is_returning_contact\": false,\n  \"actions_taken\": [\"save_lead\", \"notify_sales\", \"save_reply_draft\"],\n  \"escalated\": false,\n  \"escalation_reason\": \"\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        2128,
+        400
+      ],
+      "id": "ca17c0be-bc40-4e30-a744-b61e7c707b63",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Name: {{ $('Config').item.json.Name }}\nEmail: {{ $('Config').item.json.Email }}\nCompany: {{ $('Config').item.json.Company }}\n\nCRM record: {{ $json.id ? 'Existing contact. ' + JSON.stringify($json) : 'No record found. This is a new contact.' }}\n\nMessage:\n{{ $('Config').item.json.Message }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are the inbound request agent for a B2B software company.\n\nCATEGORIES\n- sales_lead: wants to buy, get a demo, pricing, or evaluate the product\n- support: an existing customer with a problem or question\n- partnership: agencies, resellers, integrations, co-marketing\n- job_application: someone applying for a job or internship\n- spam: ads, SEO offers, irrelevant or automated messages\nIf a message mixes a problem with clear buying intent (upgrade, more seats, new plan), classify it as sales_lead.\nRequests about the sender's own subscription or contact data (unsubscribe, change email, stop messages) are support, not spam.\n\nURGENCY: 1 = low, 2 = normal, 3 = high (deadline, outage, large deal, angry customer).\nCONFIDENCE: 0.0 to 1.0, how sure you are about the category.\nIf the message does not say what the sender actually wants, your confidence must be below 0.7.\n\nCONTEXT\nThe CRM lookup has already been done. Its result is in the user message under \"CRM record\". Use it to decide whether the sender is a returning contact.\n\nESCALATION\nIf confidence is below 0.7, or the request mentions legal action, data protection or a serious complaint: set escalated to true, explain why in escalation_reason, and call no tools. A person will handle the request. In next_step, write what that person should do.\n\nTOOL RULES (only when not escalated)\n1. sales_lead: save_lead, then notify_sales, then save_reply_draft. If the message also reports a technical problem, additionally call notify_support so the problem is not lost.\n2. partnership: save_lead, then notify_partnerships, then save_reply_draft.\n3. support: notify_support, then save_reply_draft. Never call save_lead for support.\n4. job_application or spam: call no tools.\n5. Call each tool at most once.\n6. Every notify_ message must end with one line: \"Next step: …\", a concrete action for the person who reads it.\n7. Write the reply draft before calling the first notify_ tool. Pass it as draft to every notify_ tool you call, and pass the exact same text to save_reply_draft.\n\nNever invent facts about the sender or the company. Use only the message and the CRM record.\nWrite any reply draft in the language of the request.\n\nOUTPUT\nOnly write the final JSON after you have actually called every tool your rules require. Never skip a required tool and never report a tool you did not call.\ncategory must be exactly one of: sales_lead, support, partnership, job_application, spam (lowercase, with underscore). Never use the CRM category names.\nAlways finish with the JSON summary in the required output format.\nactions_taken must list only the exact names of tools you actually called, in order. If you called no tools, use an empty list [].\nDo not describe your reasoning in actions_taken. Put it in summary or escalation_reason instead.\nnext_step is one concrete action for the team, in one sentence.",
+          "maxIterations": 6,
+          "returnIntermediateSteps": true
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1664,
+        160
+      ],
+      "id": "535af95f-6369-4897-a57f-8c647912c3e9",
+      "name": "Triage Agent",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "description": "Notify the sales team in Slack about a new or returning sales lead. Write a short message with the sender, company, what they want and the urgency.",
+        "workflowId": {
+          "__rl": true,
+          "value": "YOUR_NOTIFY_SALES_WORKFLOW_ID",
+          "mode": "id",
+          "cachedResultName": "Tool · notify_sales"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "dryRun": "={{ $('Config').item.json.dryRun }}",
+            "text": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('text', ``, 'string') }}",
+            "draft": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('draft', `The reply draft for the sender, in the language of the request. The same text you pass to save_reply_draft.`, 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "text",
+              "displayName": "text",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "dryRun",
+              "displayName": "dryRun",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "boolean",
+              "removed": false
+            },
+            {
+              "id": "draft",
+              "displayName": "draft",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        1488,
+        400
+      ],
+      "id": "f7cc793f-cac1-42d3-bb32-a63632d04f0a",
+      "name": "notify_sales"
+    },
+    {
+      "parameters": {
+        "description": "Notify the support team in Slack about a customer problem or question. Write a short message with the sender, company, the problem and the urgency.",
+        "workflowId": {
+          "__rl": true,
+          "value": "YOUR_NOTIFY_SUPPORT_WORKFLOW_ID",
+          "mode": "id",
+          "cachedResultName": "Tool · notify_support"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "dryRun": "={{ $('Config').item.json.dryRun }}",
+            "text": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('text', ``, 'string') }}",
+            "draft": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('draft', `The reply draft for the sender, in the language of the request. The same text you pass to save_reply_draft.`, 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "text",
+              "displayName": "text",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "dryRun",
+              "displayName": "dryRun",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "boolean",
+              "removed": false
+            },
+            {
+              "id": "draft",
+              "displayName": "draft",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        1616,
+        400
+      ],
+      "id": "f2b1792e-7a14-4cbe-bad8-c46341298db0",
+      "name": "notify_support"
+    },
+    {
+      "parameters": {
+        "description": "Notify the partnerships team in Slack about a partnership, reseller, integration or co-marketing request. Write a short message with the sender, company and what they propose.",
+        "workflowId": {
+          "__rl": true,
+          "value": "YOUR_NOTIFY_PARTNERSHIPS_WORKFLOW_ID",
+          "mode": "id",
+          "cachedResultName": "Tool · notify_partnerships"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "dryRun": "={{ $('Config').item.json.dryRun }}",
+            "text": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('text', ``, 'string') }}",
+            "draft": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('draft', `The reply draft for the sender, in the language of the request. The same text you pass to save_reply_draft.`, 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "text",
+              "displayName": "text",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "dryRun",
+              "displayName": "dryRun",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "boolean",
+              "removed": false
+            },
+            {
+              "id": "draft",
+              "displayName": "draft",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        1744,
+        400
+      ],
+      "id": "75b31dd0-2406-4fff-98b1-d6547e3e9f38",
+      "name": "notify_partnerships"
+    },
+    {
+      "parameters": {
+        "description": "Create or update the sender's CRM record. Only for sales leads and partnerships, never for support, job applications or spam. Set category to exactly \"Sales\" or \"Partnership\".",
+        "workflowId": {
+          "__rl": true,
+          "value": "YOUR_SAVE_LEAD_WORKFLOW_ID",
+          "mode": "id",
+          "cachedResultName": "Tool · save_lead"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "dryRun": "={{ $('Config').item.json.dryRun }}",
+            "name": "={{ $('Config').item.json.Name }}",
+            "email": "={{ $('Config').item.json.Email }}",
+            "company": "={{ $('Config').item.json.Company }}",
+            "category": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('category', ``, 'string') }}",
+            "urgency": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('urgency', ``, 'number') }}",
+            "summary": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('summary', ``, 'string') }}",
+            "nextStep": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('nextStep', ``, 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "company",
+              "displayName": "company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "category",
+              "displayName": "category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "urgency",
+              "displayName": "urgency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            },
+            {
+              "id": "summary",
+              "displayName": "summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "nextStep",
+              "displayName": "nextStep",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "dryRun",
+              "displayName": "dryRun",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "boolean",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        1872,
+        400
+      ],
+      "id": "c9ad0f85-0295-4814-a79d-bf4876ed2a2b",
+      "name": "save_lead"
+    },
+    {
+      "parameters": {
+        "description": "Save a short reply draft for a human to review before sending. Never sent automatically. Write it in the language of the request, friendly and concrete, signed as \"The team\".",
+        "workflowId": {
+          "__rl": true,
+          "value": "YOUR_SAVE_REPLY_DRAFT_WORKFLOW_ID",
+          "mode": "id",
+          "cachedResultName": "Tool · save_reply_draft"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "dryRun": "={{ $('Config').item.json.dryRun }}",
+            "email": "={{ $('Config').item.json.Email }}",
+            "draft": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('draft', ``, 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "draft",
+              "displayName": "draft",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "dryRun",
+              "displayName": "dryRun",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "boolean",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        2000,
+        400
+      ],
+      "id": "6e84b73d-a309-42ed-9883-ac5cd125838e",
+      "name": "save_reply_draft"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const out = $json.output || {};\nconst steps = $json.intermediateSteps || [];\nconst form = $('Config').item.json;\n\nconst realTools = steps.map(s => s.action?.tool).filter(Boolean);\nconst realUnique = [...new Set(realTools)];\nconst claimed = out.actions_taken || [];\nconst sorted = list => [...new Set(list)].filter(t => t !== 'lookup_contact').sort();\nconst realActions = sorted(realTools);\nconst claimedActions = sorted(claimed);\n\nconst writeTools = ['save_lead','notify_sales','notify_support','notify_partnerships','save_reply_draft'];\nconst categories = ['sales_lead','support','partnership','job_application','spam'];\nconst problems = [];\n\n// Escalation: the agent decides, the workflow enforces the confidence rule\nconst lowConfidence = typeof out.confidence === 'number' && out.confidence < 0.7;\nconst escalated = out.escalated === true || lowConfidence;\nconst escalationReason = (out.escalation_reason || (lowConfidence ? 'Low confidence (' + out.confidence + ')' : ''))\n  .replace(/\\s*No tools were called\\.?/i, '')\n  .trim();\n\nif (!categories.includes(out.category)) problems.push('invalid category');\nif (typeof out.confidence !== 'number' || out.confidence < 0 || out.confidence > 1) problems.push('invalid confidence');\nif (escalated && realTools.some(t => writeTools.includes(t))) problems.push('escalated but also took write actions');\nif (out.category === 'support' && realTools.includes('save_lead')) problems.push('support saved to CRM');\n\nconst dupWrites = writeTools.filter(t => realTools.filter(x => x === t).length > 1);\nif (dupWrites.length) problems.push('write tool called twice: ' + dupWrites.join(', '));\n\nif (JSON.stringify(claimedActions) !== JSON.stringify(realActions)) problems.push('reported actions differ from real tool calls');\n\nconst required = {\n  sales_lead: ['save_lead','notify_sales','save_reply_draft'],\n  partnership: ['save_lead','notify_partnerships','save_reply_draft'],\n  support: ['notify_support','save_reply_draft'],\n  job_application: [],\n  spam: []\n};\nconst expected = escalated ? [] : (required[out.category] || []);\nconst optional = escalated ? [] : ({ sales_lead: ['notify_support'] }[out.category] || []);\nconst realForRules = realActions.filter(t => !optional.includes(t));\nif (JSON.stringify(realForRules) !== JSON.stringify([...expected].sort())) problems.push('tools do not follow the rules (expected: ' + (expected.join(', ') || 'none') + ')');\n\nconst notes = [];\nif (lowConfidence && out.escalated !== true) notes.push('escalated by the confidence rule, not by the agent');\nif (realTools.filter(t => t === 'lookup_contact').length > 1) notes.push('lookup_contact called more than once');\n\nconst sendToHuman = escalated || problems.length > 0;\nconst reviewReason = escalated ? escalationReason : 'Rule check failed: ' + problems.join('; ');\n\nconst routes = {\n  save_lead: 'CRM',\n  notify_sales: '#sales-leads',\n  notify_support: '#support',\n  notify_partnerships: '#partnerships',\n  save_reply_draft: 'Reply draft'\n};\nconst routeList = realUnique.filter(t => routes[t]).map(t => routes[t]);\nif (sendToHuman) routeList.push('#triage-review');\nconst routedTo = routeList.join(', ') || 'logged only';\n\nconst durationSec = form.startedAt ? Math.round((Date.now() - form.startedAt) / 100) / 10 : '';\n\nreturn {\n  name: form.Name,\n  email: form.Email,\n  company: form.Company || '',\n  message: form.Message,\n  category: out.category,\n  confidence: out.confidence,\n  urgency: out.urgency,\n  summary: out.summary,\n  nextStep: out.next_step || '',\n  returningContact: out.is_returning_contact,\n  escalated,\n  escalationReason,\n  toolsUsed: realTools.join(', '),\n  routedTo,\n  ruleCheck: problems.length ? problems.join('; ') : 'ok',\n  notes: notes.join('; '),\n  needsReview: problems.length > 0,\n  sendToHuman,\n  reviewMessage: `🔎 Needs a person: ${reviewReason}\\nFrom: ${form.Name} (${form.Email})\\nSummary: ${out.summary || ''}\\nNext step: ${out.next_step || 'Review this request.'}`,\n  durationSec\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2320,
+        64
+      ],
+      "id": "bd190e5c-a133-4daf-ac3c-09e709ba089b",
+      "name": "Check Agent Output"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1151e4b9-bddd-4276-916e-72252815c400",
+              "name": "logSheetId",
+              "value": "YOUR_SHEET_ID",
+              "type": "string"
+            },
+            {
+              "id": "c035e057-114b-4927-8985-50057f25ab2e",
+              "name": "salesChannel",
+              "value": "YOUR_SALES_CHANNEL_ID",
+              "type": "string"
+            },
+            {
+              "id": "23a8b7f2-a3c1-4037-b1bc-72cd52b1902c",
+              "name": "supportChannel",
+              "value": "YOUR_SUPPORT_CHANNEL_ID",
+              "type": "string"
+            },
+            {
+              "id": "c64d1563-23d6-40d6-8acb-5bc97fa6e2f5",
+              "name": "partnerChannel",
+              "value": "YOUR_PARTNER_CHANNEL_ID",
+              "type": "string"
+            },
+            {
+              "id": "52c58bea-3501-42ac-b2b7-44a5eb51fe77",
+              "name": "reviewChannel",
+              "value": "YOUR_REVIEW_CHANNEL_ID",
+              "type": "string"
+            },
+            {
+              "id": "659a26f0-bca8-429f-bc50-dba3bb8366f0",
+              "name": "dryRun",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "fa43f51b-8a6c-42fc-8a54-d85bd3b9a15c",
+              "name": "startedAt",
+              "value": "={{ $now.toMillis() }}",
+              "type": "number"
+            },
+            {
+              "id": "0ae1069f-77b7-4875-b819-1b9c94af2cff",
+              "name": "Name",
+              "value": "=Test {{ $json.ID }}",
+              "type": "string"
+            },
+            {
+              "id": "e127b173-ea3e-4848-92c9-f4200b29f7a8",
+              "name": "Email",
+              "value": "={{ $json.Email || 'test' + $json.ID + '@example.com' }}",
+              "type": "string"
+            },
+            {
+              "id": "e3cb1f62-903b-4c1d-b75d-ef71eac87a78",
+              "name": "Company",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "5b5c40b0-3c0b-4d28-815f-e08a039baf71",
+              "name": "Message",
+              "value": "={{ $json.Message }}",
+              "type": "string"
+            },
+            {
+              "id": "83f46bfe-604e-4a1a-ac88-12e4fa818282",
+              "name": "ID",
+              "value": "={{ $json.ID }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        896,
+        160
+      ],
+      "id": "0f172dca-649b-4016-990c-638952132721",
+      "name": "Config"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_SHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Agent test set",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "ID": "={{ $('Config').item.json.ID }}",
+            "Predicted": "={{ $json.category }}",
+            "Confidence": "={{ $json.confidence }}",
+            "Tools used": "={{ $json.toolsUsed }}",
+            "Rule check": "={{ $json.ruleCheck }}",
+            "Duration (s)": "={{ $json.durationSec }}"
+          },
+          "matchingColumns": [
+            "ID"
+          ],
+          "schema": [
+            {
+              "id": "ID",
+              "displayName": "ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Message",
+              "displayName": "Message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Expected",
+              "displayName": "Expected",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Predicted",
+              "displayName": "Predicted",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Confidence",
+              "displayName": "Confidence",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Correct",
+              "displayName": "Correct",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Accuracy",
+              "displayName": "Accuracy",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Tools used",
+              "displayName": "Tools used",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Rule check",
+              "displayName": "Rule check",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Duration (s)",
+              "displayName": "Duration (s)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2544,
+        288
+      ],
+      "id": "cfa8db4a-5da8-4cd6-ade8-e440b7d76397",
+      "name": "Write results",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_SHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Agent test set",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "ID": "={{ $('Config').first().json.ID }}",
+            "Predicted": "=ERROR",
+            "Rule check": "={{ $json.error?.message || 'agent failed' }}"
+          },
+          "matchingColumns": [
+            "ID"
+          ],
+          "schema": [
+            {
+              "id": "ID",
+              "displayName": "ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Message",
+              "displayName": "Message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Expected",
+              "displayName": "Expected",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Predicted",
+              "displayName": "Predicted",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Confidence",
+              "displayName": "Confidence",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Correct",
+              "displayName": "Correct",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Accuracy",
+              "displayName": "Accuracy",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Escalated",
+              "displayName": "Escalated",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Tools used",
+              "displayName": "Tools used",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Rule check",
+              "displayName": "Rule check",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Duration (s)",
+              "displayName": "Duration (s)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2320,
+        256
+      ],
+      "id": "bb10fd3a-e790-409a-964d-b95a15acad77",
+      "name": "Write error",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {
+          "reset": false
+        }
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        672,
+        288
+      ],
+      "id": "8dc74164-dab7-46b9-9f97-16ed9017d0d9",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "YOUR_AIRTABLE_BASE_ID",
+          "mode": "list",
+          "cachedResultName": "Lead Triage CRM"
+        },
+        "table": {
+          "__rl": true,
+          "value": "YOUR_AIRTABLE_TABLE_ID",
+          "mode": "list",
+          "cachedResultName": "Leads"
+        },
+        "filterByFormula": "={Email} = '{{ $('Config').item.json.Email }}'",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1120,
+        160
+      ],
+      "id": "9f357352-da68-4f0e-9642-ffdd454bde97",
+      "name": "Lookup contact",
+      "alwaysOutputData": true,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Read test set",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read test set": {
+      "main": [
+        [
+          {
+            "node": "Limit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anthropic Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Triage Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Triage Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Triage Agent": {
+      "main": [
+        [
+          {
+            "node": "Check Agent Output",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Write error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "notify_sales": {
+      "ai_tool": [
+        [
+          {
+            "node": "Triage Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "notify_support": {
+      "ai_tool": [
+        [
+          {
+            "node": "Triage Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "notify_partnerships": {
+      "ai_tool": [
+        [
+          {
+            "node": "Triage Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "save_lead": {
+      "ai_tool": [
+        [
+          {
+            "node": "Triage Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "save_reply_draft": {
+      "ai_tool": [
+        [
+          {
+            "node": "Triage Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Agent Output": {
+      "main": [
+        [
+          {
+            "node": "Write results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "Lookup contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write error": {
+      "main": [
+        []
+      ]
+    },
+    "Write results": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lookup contact": {
+      "main": [
+        [
+          {
+            "node": "Triage Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "nodeGroups": [],
+  "tags": []
+}
